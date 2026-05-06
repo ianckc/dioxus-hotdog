@@ -2,6 +2,11 @@ use dioxus::prelude::*;
 
 static CSS: Asset = asset!("/assets/main.css");
 
+#[derive(serde::Deserialize, Debug)]
+struct DogApi {
+    message: String,
+}
+
 fn main() {
     dioxus::launch(App);
 }
@@ -26,10 +31,19 @@ fn Title() -> Element {
 
 #[component]
 fn DogView() -> Element {
-    let img_src = use_hook(|| "https://images.dog.ceo/breeds/pitbull/dog-3981540_1280.jpg");
+    let mut img_src = use_signal(|| "".to_string());
 
     let skip = move |evt| {};
-    let save = move |evt| {};
+    let save = move |_| async move {
+        let response = reqwest::get("https://dog.ceo/api/breeds/image/random")
+            .await
+            .unwrap()
+            .json::<DogApi>()
+            .await
+            .unwrap();
+
+        img_src.set(response.message);
+    };
 
     rsx! {
         div { id: "dogview",
